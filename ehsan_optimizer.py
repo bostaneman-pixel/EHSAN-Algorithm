@@ -29,7 +29,7 @@ def calculate_entropy(pop):
 # --- 3. کلاس اصلی الگوریتم ---
 class EHSANOptimizer:
     """
-    نسخه کامل و نهایی EHSAN+++ مطابق PDF (Golden Expansion Physics Algorithm)
+    نسخه کامل و نهایی EHSAN مطابق PDF (Golden Expansion Physics Algorithm)
     """
 
     def __init__(self, fitness_func, bounds, pop_size=50, generations=500):
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     bounds = [(-500, 500)] * DIM
 
-    print("\nRunning EHSAN+++ on Schwefel (D=10)...\n")
+    print("\nRunning EHSAN on Schwefel (D=10)...\n")
 
     opt = EHSANOptimizer(schwefel, bounds, pop_size=50, generations=500)
     best_sol, best_fit = opt.run()
