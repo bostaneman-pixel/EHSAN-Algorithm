@@ -1,154 +1,108 @@
 import numpy as np
 
-# --- 1. ثابت‌های فیزیکی نظریه احسان ---
-PHI = (1 + np.sqrt(5)) / 2        # نسبت طلایی Φ ≈ 1.618
-PHI_INV = 1 / PHI                 # 1/Φ ≈ 0.618
+# --- 1. ثابت‌های فیزیکی ---
+PHI = (1 + np.sqrt(5)) / 2
+PHI_INV = 1 / PHI
 
 
-# --- 2. تابع آنتروپی / تنوع جمعیت ---
+# --- 2. آنتروپی برداری‌شده ---
 def calculate_entropy(pop):
-    """
-    محاسبه تنوع بر اساس فاصله از مرکز جرم جمعیت.
-    (نسبت میانگین فاصله / فاصله نمونه‌ای)
-    """
-    if pop.shape[0] < 2:
-        return 0
-
     center = np.mean(pop, axis=0)
     distances = np.linalg.norm(pop - center, axis=1)
-
-    # برای جلوگیری از تقسیم بر صفر
     denom = np.linalg.norm(pop[0] - center)
     if denom < 1e-12:
         denom = 1.0
-
     return np.mean(distances) / denom
 
 
-
-# --- 3. کلاس اصلی الگوریتم ---
+# --- 3. نسخه بهینه‌شده EHSAN ---
 class EHSANOptimizer:
-    """
-    نسخه کامل و نهایی EHSAN مطابق PDF (Golden Expansion Physics Algorithm)
-    """
 
     def __init__(self, fitness_func, bounds, pop_size=50, generations=500):
         self.fitness_func = fitness_func
         self.pop_size = pop_size
         self.generations = generations
 
-        # مدیریت محدوده‌ها
-        if isinstance(bounds[0], tuple):
-            self.bounds = np.array(bounds)
-        else:
-            raise ValueError("bounds must be list of (low, high) tuples!")
+        self.bounds = np.array(bounds)
+        self.dim = len(bounds)
+        self.lb = self.bounds[:, 0]
+        self.ub = self.bounds[:, 1]
 
-        self.dimensions = len(bounds)
-        self.lower_bound = self.bounds[:, 0]
-        self.upper_bound = self.bounds[:, 1]
-
-        # حافظه نخبگان (1/Φ از جمعیت)
-        self.num_elites = max(1, int(self.pop_size * PHI_INV))
-        self.elite_memory = np.zeros((self.num_elites, self.dimensions))
-
+        self.num_elites = max(1, int(pop_size * PHI_INV))
+        self.elite_memory = np.zeros((self.num_elites, self.dim))
 
     # --- 4. اجرای الگوریتم ---
     def run(self):
-        # 4.1 جمعیت اولیه
-        population = np.random.uniform(
-            self.lower_bound, self.upper_bound,
-            (self.pop_size, self.dimensions)
-        )
+
+        # جمعیت اولیه
+        pop = np.random.uniform(self.lb, self.ub, (self.pop_size, self.dim))
 
         for gen in range(self.generations):
 
-            # 4.2 ارزیابی فیتنس
-            fits = np.array([self.fitness_func(p) for p in population])
-            sorted_idx = np.argsort(fits)
+            # --- 4.1 ارزیابی ---
+            fits = np.apply_along_axis(self.fitness_func, 1, pop)
+            idx = np.argsort(fits)
 
-            # بهترین کلی
-            X_best = population[sorted_idx[0]]
+            pop = pop[idx]
+            fits = fits[idx]
 
-            # به‌روزرسانی حافظه نخبگان
-            self.elite_memory = population[sorted_idx[:self.num_elites]].copy()
+            best = pop[0]
+            self.elite_memory = pop[:self.num_elites].copy()
 
-            # --- 5. محاسبه آنتروپی جهت تشخیص حالت انفجار/انقباض ---
-            R = calculate_entropy(population)
+            # --- 4.2 آنتروپی ---
+            R = calculate_entropy(pop)
 
-            # --- 6. سه سطح PV-Burst مطابق PDF ---
+            # --- 4.3 Burst تطبیقی ---
             if R < 0.01:
-                # ULTRA burst → تقریباً ریست کامل
-                num_reset = self.pop_size - self.num_elites
-                reset_idx = sorted_idx[self.num_elites:]
-                population[reset_idx] = np.random.uniform(
-                    self.lower_bound, self.upper_bound,
-                    (num_reset, self.dimensions)
+                # Ultra Burst
+                pop[self.num_elites:] = np.random.uniform(
+                    self.lb, self.ub, (self.pop_size - self.num_elites, self.dim)
                 )
-
             elif R < 0.03:
-                # MACRO burst → 30 تا 60 درصد ریست
-                frac = np.random.uniform(0.30, 0.60)
-                num_reset = int(self.pop_size * frac)
-                reset_idx = sorted_idx[-num_reset:]
-                population[reset_idx] = np.random.uniform(
-                    self.lower_bound, self.upper_bound,
-                    (num_reset, self.dimensions)
-                )
-
+                # Macro Burst
+                k = np.random.randint(int(0.3*self.pop_size), int(0.6*self.pop_size))
+                pop[-k:] = np.random.uniform(self.lb, self.ub, (k, self.dim))
             elif R < 0.10:
-                # MICRO burst → فقط بدترین‌ها
-                num_reset = int(self.pop_size * PHI_INV)
-                reset_idx = sorted_idx[-num_reset:]
-                population[reset_idx] = np.random.uniform(
-                    self.lower_bound, self.upper_bound,
-                    (num_reset, self.dimensions)
-                )
+                # Micro Burst
+                k = int(self.pop_size * PHI_INV)
+                pop[-k:] = np.random.uniform(self.lb, self.ub, (k, self.dim))
 
-            # --- 7. ایجاد نسل جدید با جهش طلایی ---
-            new_population = []
+            # --- 4.4 جهش طلایی برداری‌شده ---
+            elite_idx = np.argmin(
+                np.linalg.norm(self.elite_memory[:, None, :] - pop[None, :, :], axis=2),
+                axis=0
+            )
+            X_elite = self.elite_memory[elite_idx]
 
-            for i in range(self.pop_size):
-                X = population[i]
+            rand_idx = np.random.randint(0, self.pop_size, self.pop_size)
+            X_rand = pop[rand_idx]
 
-                # --- 7.1 نزدیک‌ترین نخبه (Golden Refuge Local) ---
-                distances = np.linalg.norm(self.elite_memory - X, axis=1)
-                X_best_local = self.elite_memory[np.argmin(distances)]
+            X_worst = pop[-1]
 
-                # --- 7.2 انتخاب تصادفی + بدترین جهت نیروی انتشار ---
-                r = np.random.randint(0, self.pop_size)
-                X_random = population[r]
-                X_worst = population[sorted_idx[-1]]
+            # نویز تطبیقی (بهبود مهم)
+            sigma = 0.05 * np.exp(-gen / (0.3 * self.generations))
+            noise = np.random.normal(0, sigma, (self.pop_size, self.dim))
 
-                # --- 7.3 جهش برداری طلایی ---
-                golden_mutation = (
-                    PHI * (X_best_local - X) +
-                    PHI_INV * (X_random - X_worst)
-                )
+            golden_mut = (
+                PHI * (X_elite - pop) +
+                PHI_INV * (X_rand - X_worst)
+            )
 
-                # نویز فیزیکی کنترل‌شده (خیلی مهم)
-                noise = np.random.normal(0, 0.01, self.dimensions)
+            new_pop = pop + golden_mut + noise
+            new_pop = np.clip(new_pop, self.lb, self.ub)
 
-                X_new = X + golden_mutation + noise
+            # --- 4.5 انتخاب ---
+            combined = np.vstack([pop, new_pop])
+            combined_fits = np.apply_along_axis(self.fitness_func, 1, combined)
 
-                # محدودیت‌ها
-                X_new = np.clip(X_new, self.lower_bound, self.upper_bound)
+            idx = np.argsort(combined_fits)
+            pop = combined[idx[:self.pop_size]]
 
-                new_population.append(X_new)
-
-            # --- 8. ترکیب و انتخاب ---
-            combined = np.vstack([population, np.array(new_population)])
-            combined_fits = np.array([self.fitness_func(p) for p in combined])
-
-            sorted_idx = np.argsort(combined_fits)
-            population = combined[sorted_idx[:self.pop_size]]
-
-        # --- 9. خروجی ---
-        best_final = population[0]
-        return best_final, float(self.fitness_func(best_final))
+        best = pop[0]
+        return best, float(self.fitness_func(best))
 
 
-
-# --- 10. تست نمونه (Schwefel) ---
+# --- 5. تست روی Schwefel ---
 if __name__ == "__main__":
 
     DIM = 10
@@ -158,14 +112,11 @@ if __name__ == "__main__":
 
     bounds = [(-500, 500)] * DIM
 
-    print("\nRunning EHSAN on Schwefel (D=10)...\n")
-
     opt = EHSANOptimizer(schwefel, bounds, pop_size=50, generations=500)
     best_sol, best_fit = opt.run()
 
     print("Best fitness =", best_fit)
     if best_fit < 0.01:
-        print(">>> SUCCESS: reached global optimum (≈0.0)")
+        print(">>> SUCCESS: reached global optimum")
     else:
-        print(">>> NOT OPTIMAL: stuck in a local basin")
-
+        print(">>> NOT OPTIMAL")
