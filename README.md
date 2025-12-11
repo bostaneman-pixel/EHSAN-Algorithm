@@ -24,11 +24,18 @@ We strongly encourage you to support the developer's time by making a voluntary 
 
 Your support directly funds future research, ongoing maintenance, and the development of new features.
 
-🔗 Donation Links:
+## 💖 Support the Project & Voluntary Payment
 
-Online Payment Link (PayPal): [Your Online Payment Link Here]
+The EHSAN Algorithm is released as free and open-source software (under the MIT License). You are free to use it for any purpose.
 
-Crypto (Optional): [Your Bitcoin or other Crypto Wallet Address Here]
+If EHSAN has provided value for your work, **we strongly encourage you to support the developer's time by making a voluntary donation.** Your funds will directly support continued research and maintenance.
 
-```bash
-pip install ehsan-opt
+### I. For International Supporters (Global Donations)
+
+Due to international banking restrictions, we only accept cryptocurrency donations from outside Iran. Please ensure you select the **TRON (TRC20)** network when sending USDT.
+
+| Currency | Network | Wallet Address |
+| :---: | :---: | :--- |
+| **Tether (USDT)** | **TRON (TRC20)** | **`THRNhb27Znc2P4UnrAHZMrP3Cjxdrt7M5c`** |
+
+
