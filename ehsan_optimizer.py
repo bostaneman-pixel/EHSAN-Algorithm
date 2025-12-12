@@ -1,122 +1,77 @@
 import numpy as np
 
-# --- 1. ثابت‌های فیزیکی ---
-PHI = (1 + np.sqrt(5)) / 2
-PHI_INV = 1 / PHI
-
-
-# --- 2. آنتروپی برداری‌شده ---
-def calculate_entropy(pop):
-    center = np.mean(pop, axis=0)
-    distances = np.linalg.norm(pop - center, axis=1)
-    denom = np.linalg.norm(pop[0] - center)
-    if denom < 1e-12:
-        denom = 1.0
-    return np.mean(distances) / denom
-
-
-# --- 3. نسخه بهینه‌شده EHSAN ---
-class EHSANOptimizer:
-
-    def __init__(self, fitness_func, bounds, pop_size=50, generations=500):
-        self.fitness_func = fitness_func
-        self.pop_size = pop_size
-        self.generations = generations
-
+class EHSANOptimizerV1_0:
+    def __init__(self, obj_func, bounds,
+                 pop_size=80,
+                 generations=300,
+                 max_evals=20000):
+        self.obj_func = obj_func
         self.bounds = np.array(bounds)
         self.dim = len(bounds)
         self.lb = self.bounds[:, 0]
         self.ub = self.bounds[:, 1]
 
-        self.num_elites = max(1, int(pop_size * PHI_INV))
-        self.elite_memory = np.zeros((self.num_elites, self.dim))
+        self.pop_size = pop_size
+        self.generations = generations
+        self.max_evals = max_evals
 
-    # --- 4. اجرای الگوریتم ---
+    def initialize(self):
+        self.pop = np.random.uniform(self.lb, self.ub, (self.pop_size, self.dim))
+        self.fits = np.array([self.obj_func(p) for p in self.pop])
+        self.best_x = self.pop[np.argmin(self.fits)].copy()
+        self.best_f = np.min(self.fits)
+        self.eval_count = self.pop_size
+
     def run(self):
-
-        # جمعیت اولیه
-        pop = np.random.uniform(self.lb, self.ub, (self.pop_size, self.dim))
+        self.initialize()
 
         for gen in range(self.generations):
+            if self.eval_count >= self.max_evals:
+                break
 
-            # --- 4.1 ارزیابی ---
-            fits = np.apply_along_axis(self.fitness_func, 1, pop)
-            idx = np.argsort(fits)
+            t = gen / max(1, (self.generations - 1))
 
-            pop = pop[idx]
-            fits = fits[idx]
+            new_pop = self.pop.copy()
+            new_fits = self.fits.copy()
 
-            best = pop[0]
-            self.elite_memory = pop[:self.num_elites].copy()
+            for i in range(self.pop_size):
+                Xi = self.pop[i]
 
-            # --- 4.2 آنتروپی ---
-            R = calculate_entropy(pop)
+                C1 = 0.2 * np.random.rand()
+                C2 = 0.5 * (1 - t) * np.random.rand()
+                C3 = (0.05 + 0.15 * t) * np.random.rand()
 
-            # --- 4.3 Burst تطبیقی ---
-            if R < 0.01:
-                # Ultra Burst
-                pop[self.num_elites:] = np.random.uniform(
-                    self.lb, self.ub, (self.pop_size - self.num_elites, self.dim)
-                )
-            elif R < 0.03:
-                # Macro Burst
-                k = np.random.randint(int(0.3*self.pop_size), int(0.6*self.pop_size))
-                pop[-k:] = np.random.uniform(self.lb, self.ub, (k, self.dim))
-            elif R < 0.10:
-                # Micro Burst
-                k = int(self.pop_size * PHI_INV)
-                pop[-k:] = np.random.uniform(self.lb, self.ub, (k, self.dim))
+                Exploitation = C1 * (self.best_x - Xi)
 
-            # --- 4.4 جهش طلایی برداری‌شده ---
-            elite_idx = np.argmin(
-                np.linalg.norm(self.elite_memory[:, None, :] - pop[None, :, :], axis=2),
-                axis=0
-            )
-            X_elite = self.elite_memory[elite_idx]
+                r1, r2 = np.random.choice(self.pop_size, 2, replace=False)
+                Xr1, Xr2 = self.pop[r1], self.pop[r2]
+                Exploration = C2 * (Xr1 - Xr2)
 
-            rand_idx = np.random.randint(0, self.pop_size, self.pop_size)
-            X_rand = pop[rand_idx]
+                Targeting = C3 * (self.best_x - Xi)
 
-            X_worst = pop[-1]
+                if t < 0.5:
+                    mutation_scale = 0.02
+                elif t < 0.7:
+                    mutation_scale = 0.01
+                else:
+                    mutation_scale = 0.0
 
-            # نویز تطبیقی (بهبود مهم)
-            sigma = 0.05 * np.exp(-gen / (0.3 * self.generations))
-            noise = np.random.normal(0, sigma, (self.pop_size, self.dim))
+                Mutation = mutation_scale * np.random.randn(self.dim)
 
-            golden_mut = (
-                PHI * (X_elite - pop) +
-                PHI_INV * (X_rand - X_worst)
-            )
+                X_new = Xi + Exploitation + Exploration + Targeting + Mutation
+                X_new = np.clip(X_new, self.lb, self.ub)
 
-            new_pop = pop + golden_mut + noise
-            new_pop = np.clip(new_pop, self.lb, self.ub)
+                F_new = self.obj_func(X_new)
+                self.eval_count += 1
 
-            # --- 4.5 انتخاب ---
-            combined = np.vstack([pop, new_pop])
-            combined_fits = np.apply_along_axis(self.fitness_func, 1, combined)
+                if F_new < self.fits[i]:
+                    new_pop[i] = X_new
+                    new_fits[i] = F_new
+                    if F_new < self.best_f:
+                        self.best_f = F_new
+                        self.best_x = X_new.copy()
 
-            idx = np.argsort(combined_fits)
-            pop = combined[idx[:self.pop_size]]
+            self.pop = new_pop
+            self.fits = new_fits
 
-        best = pop[0]
-        return best, float(self.fitness_func(best))
-
-
-# --- 5. تست روی Schwefel ---
-if __name__ == "__main__":
-
-    DIM = 10
-
-    def schwefel(p):
-        return 418.9829 * DIM - np.sum(p * np.sin(np.sqrt(np.abs(p))))
-
-    bounds = [(-500, 500)] * DIM
-
-    opt = EHSANOptimizer(schwefel, bounds, pop_size=50, generations=500)
-    best_sol, best_fit = opt.run()
-
-    print("Best fitness =", best_fit)
-    if best_fit < 0.01:
-        print(">>> SUCCESS: reached global optimum")
-    else:
-        print(">>> NOT OPTIMAL")
+        return self.best_f, self.best_x
