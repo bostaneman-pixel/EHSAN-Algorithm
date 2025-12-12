@@ -1,19 +1,32 @@
-# EHSAN Algorithm (EHSAN-OPT)
+# EHSAN Optimizer v1.0
 
-**A Physics-Inspired Global Optimization Solver based on the EHSAN Theory**
+EHSAN Optimizer is a physics‑inspired optimization algorithm derived from a simple continuous model of collective motion and energy minimization.  
+Despite its minimal design, the algorithm shows **strong, stable, and competitive performance** on a wide range of **smooth and continuous optimization problems**.
 
-The EHSAN Algorithm is a pioneering metaheuristic optimization framework derived directly from the fundamental physical principles of **EHSAN Theory** (DOI: https://doi.org/10.5281/zenodo.17481155).
-
-EHSAN models the intrinsic expansion of matter and the necessity for $\mathbf{PV}$ stability (Pressure-Volume) in physical systems. It utilizes the **Golden Ratio ($\mathbf{\Phi \approx 1.618}$)** as its structural constant for optimal selection and movement. This unique physical foundation allows EHSAN to outperform classical algorithms in the most challenging optimization problems.
+This repository contains the reference implementation of **EHSAN Optimizer v1.0**, along with benchmark functions, examples, and reproducible experiments.
 
 ---
 
-## 🚀 Why Choose EHSAN?
+## 🔍 Key Features
 
-* **Absolute Accuracy:** EHSAN is the only algorithm in its class to consistently reach the true global optimum ($\mathbf{0.0}$ fitness) in highly deceptive functions like **Schwefel**, demonstrating robustness against local minima trapping.
-* **Physics-Driven Mechanisms:** It relies on core mechanisms like **Adaptive Golden-Vector Mutation** and $\mathbf{PV}$-inspired **Density-Burst Expansion** (for local optima escape).
-* **Simplicity:** Contains minimal hyperparameters beyond population size, relying instead on stable physical ratios for efficient search.
-* **Proven Superiority:** Achieves significantly better final accuracy than established algorithms (DE, PSO) in multimodal, high-dimensional benchmarks (Zakharov, Schwefel).
+- ✅ **Physics‑inspired design** based on continuous forces and adaptive motion  
+- ✅ **Strong performance on smooth continuous landscapes**  
+- ✅ Excellent results on:  
+  - Sphere  
+  - Ackley  
+  - Griewank  
+- ✅ **Competitive behavior** on more challenging multimodal functions such as Schwefel  
+- ✅ Simple, clean, and easy‑to‑understand implementation  
+- ✅ No complex heuristics, no heavy parameter tuning  
+
+---
+
+## 📦 Installation
+
+The optimizer only requires NumPy:
+
+```bash
+pip install numpy
 
 Support the Project & Voluntary Payment (Donation-ware)
 The EHSAN Algorithm is released as free and open-source software (under the MIT License). You are free to use it for any purpose, commercial or non-commercial.
