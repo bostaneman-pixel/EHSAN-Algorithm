@@ -1,0 +1,7 @@
+Sample output from a single run:
+
+Sphere best value: 1.1e-06
+Ackley best value: 0.0009
+Rastrigin best value: 12.7
+Griewank best value: 0.065
+Schwefel best value: 945
