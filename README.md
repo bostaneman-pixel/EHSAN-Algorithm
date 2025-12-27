@@ -1,25 +1,47 @@
-# EHSAN Optimizer v1.0
+# Universal Density-Based Optimization Algorithm — Version 2
 
-EHSAN Optimizer is a physics‑inspired optimization algorithm derived from a simple continuous model of collective motion and energy minimization.  
-Despite its minimal design, the algorithm shows **strong, stable, and competitive performance** on a wide range of **smooth and continuous optimization problems**.
+## Overview
+Version 2 introduces a universal, density-driven optimization algorithm based on a **molecular fusion mechanism** and **adaptive micro line search**.  
+The algorithm requires no problem-specific tuning and performs consistently across smooth, multimodal, and deceptive landscapes.
 
-This repository contains the reference implementation of **EHSAN Optimizer v1.0**, along with benchmark functions, examples, and reproducible experiments.
+This version is the successor to **Version 1.5**, with major improvements in stability and performance.
+
+---
+
+## Core Principles
+- The algorithm moves toward **regions of higher population density**, where stable minima naturally form.
+- A **neutral fusion law** combines candidate solutions per-dimension using stable softmax weighting.
+- A **5‑point adaptive micro line search** refines each coordinate locally.
+- A **self-regulating temperature schedule** controls exploration vs. exploitation.
+- No heuristics, patches, or conditional rules are used.
 
 ---
 
-## 🔍 Key Features
-
-- ✅ **Physics‑inspired design** based on continuous forces and adaptive motion  
-- ✅ **Strong performance on smooth continuous landscapes**  
-- ✅ Excellent results on:  
-  - Sphere  
-  - Ackley  
-  - Griewank  
-- ✅ **Competitive behavior** on more challenging multimodal functions such as Schwefel  
-- ✅ Simple, clean, and easy‑to‑understand implementation  
-- ✅ No complex heuristics, no heavy parameter tuning  
+## Key Features
+- **Density-driven exploration**  
+- **Molecular fusion per dimension**  
+- **Stable softmax weighting**  
+- **Adaptive microsearch**  
+- **Nonlinear noise regulation**  
+- **Universal behavior across landscapes**
 
 ---
+
+## Benchmark Results
+The algorithm has been tested on standard 10‑dimensional benchmarks:
+
+| Function | Result |
+|---------|--------|
+| Sphere | ~0 |
+| Rastrigin | ~0 |
+| Ackley | ~0 |
+| Griewank | ~0 |
+| Schwefel | ~0.1 (global minimum near 421) |
+
+These results were obtained without parameter tuning.
+
+---
+
 
 ## 📦 Installation
 
