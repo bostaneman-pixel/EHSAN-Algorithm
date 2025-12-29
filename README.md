@@ -1,10 +1,10 @@
-# Universal Density-Based Optimization Algorithm — Version 2
+# Universal Density-Based Optimization Algorithm 
 
 ## Overview
-Version 2 introduces a universal, density-driven optimization algorithm based on a **molecular fusion mechanism** and **adaptive micro line search**.  
+introduces a universal, density-driven optimization algorithm based on a **molecular fusion mechanism** and **adaptive micro line search**.  
 The algorithm requires no problem-specific tuning and performs consistently across smooth, multimodal, and deceptive landscapes.
 
-This version is the successor to **Version 1.5**, with major improvements in stability and performance.
+
 
 ---
 
